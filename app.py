@@ -21,14 +21,20 @@ from linebot.v3.webhooks import (
     FileMessageContent
 )
 # Import the blueprint
-from extensions import db #, jwt
+# from extensions import db #, jwt
 from routes import main_bp
 from service.upload_controller import upload_bp
 import uuid
 from repository.user_repo import UserRepo
 from model.user import User
-DOMAIN = "https://0346885375e5.ngrok-free.app"
 
+from training.gemma_inference import gemma_inference
+
+DOMAIN = "https://refutably-cistic-miyoko.ngrok-free.dev"
+
+
+model_path = f"./training/models/saved-Qwen3-model-8B"
+lora_path = f"./training/models/saved-Qwen3-model-8B"
 # Load environment variables from .env file
 load_dotenv()
 
@@ -40,11 +46,11 @@ app.config.from_prefixed_env()
 app.register_blueprint(main_bp)
 app.register_blueprint(upload_bp, url_prefix="/upload")
 
-@app.before_request
-def create_tables():
-    db.create_all()
+# @app.before_request
+# def create_tables():
+#     db.create_all()
 
-db.init_app(app)
+# db.init_app(app)
 # jwt.init_app(app)
 
 # Get LINE Channel credentials from environment variables
@@ -100,7 +106,7 @@ def handle_message(event):
             upload_url = f"{DOMAIN}/upload-page?token={token}"
             reply_text = f"請點擊以下連結上傳檔案：\n{upload_url}"
         else:
-            reply_text = user_text  # 預設回 echo
+            reply_text = gemma_inference(model_path, lora_path, user_text)  # 預設回 echo
 
         line_bot_api.reply_message_with_http_info(
             ReplyMessageRequest(

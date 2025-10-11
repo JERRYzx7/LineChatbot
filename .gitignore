@@ -13,5 +13,11 @@ wheels/
 uploads/
 saved_models/
 processed_csv/
-
+training/models/
+training/loras/
+training/loras/
+training/chat/
+training/data/
+training/outputs/
+chat/
 uv.lock
