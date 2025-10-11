@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - ./training/models:/app/training/models
+      - ./training/loras:/app/training/loras
+      - ./uploads:/app/uploads
+      - ./processed_csv:/app/processed_csv
+      - ./chat:/app/chat
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-linebot_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
