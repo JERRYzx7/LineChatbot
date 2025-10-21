@@ -128,10 +128,13 @@ def limit_stickers(text: str) -> str:
     return text
 
 def clean_output(text: str) -> str:
-    match = re.search(r"<\|assistant\|>(.*?)<\|end\|>", text, re.DOTALL)
+    match = re.search(r"<\|assistant\|>(.*?)<\|end\|>", text, re.DOTALL | re.IGNORECASE)
     if match:
         return match.group(1).strip()
-    return text.strip()  # 不做過度處理
+
+    matches = re.findall(r"<\|>(.*?)<\|>", text, re.DOTALL)
+    if matches:
+        return "\n".join(m.strip() for m in matches if m.strip())
 
 
 def build_prompt(chat_history: List[dict], user_input: str, system_prompt: str = None) -> List[dict]:
@@ -149,13 +152,13 @@ def build_prompt(chat_history: List[dict], user_input: str, system_prompt: str =
 
     return prompt_list
 
-def gemma_inference(
+def qwen3_inference(
     base_model_dir: str,
     model_dir: str,
     input_text: str,
     memory_path: str = "./chat/chat.csv",
     max_retries: int = 3,
-    max_history: int = 100,
+    max_history: int = 10,
 ) -> List[str] | None:
     try:
         greetings = [
@@ -198,7 +201,13 @@ def gemma_inference(
 
         history = load_memory(memory_path, max_history)
         prompt_list = build_prompt(history, input_text)
-        prompt = "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in prompt_list])
+        # prompt = "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in prompt_list])
+
+        prompt = tokenizer.apply_chat_template(
+            prompt_list, 
+            tokenize=False, 
+            add_generation_prompt=True # 關鍵：告訴模型接下來要生成 Assistant 的回覆
+        )
 
         # if isinstance(user_history, list) and user_history:
         #     training_file = random.choice(user_history)
@@ -253,8 +262,6 @@ def gemma_inference(
                 generated_text = clean_output(raw_output)
                 print(f"[DEBUG] After clean:\n{generated_text}\n")
                 # generated_text = limit_stickers(generated_text)
-
-                # generated_text = get_first_assistant(generated_text)
 
                 # if "Assistant:" in generated_text:
                 #     generated_text = generated_text.split("Assistant:")[-1].strip()
@@ -319,10 +326,7 @@ def gemma_inference(
                 if generated_text:
                     print(generated_text)
                     return generated_text  #responses不穩定
-                # generated_text = analyze_and_modify_response(
-                #     input_text, generated_text, modelname, chat, session_history
-                # )
-                # responses.append(generated_text)
+                
                 
                 # if any(r.strip() for r in responses):
                 #     return responses
