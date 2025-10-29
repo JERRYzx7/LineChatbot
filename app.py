@@ -28,7 +28,7 @@ import uuid
 from repository.user_repo import UserRepo
 from model.user import User
 
-from training.gemma_inference import gemma_inference
+from training.qwen3_inference import qwen3_inference
 
 DOMAIN = "https://refutably-cistic-miyoko.ngrok-free.dev"
 
